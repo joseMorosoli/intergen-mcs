@@ -13,10 +13,8 @@ The current document describes:
 
 ## Section 1: New variables and data sets.
 
-Create Variables Create an additive score for internalising difficulties (emotional and peer problems) and externalising difficulties (conduct and hyperactivity problems).
 
-
-```{r setup, include=FALSE}
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
 # Load packages
 library(foreign)
 
@@ -53,7 +51,8 @@ external1$DDHYPER <- as.numeric(as.character(external1$DDHYPER))
 external1$DDHYPER <- as.numeric(as.character(external1$DDHYPER))
 external1$FCONDUCT <- as.numeric(as.character(external1$FCONDUCT))
 external1$FHYPER <- as.numeric(as.character(external1$FHYPER))
-#Sum subscales to make internalising and externalising factors per sweep
+
+# Sum subscales to make internalising and externalising factors per sweep
 internal1$BINT <- internal1$BEMOTION + internal1$BPEER
 internal1$CINT <- internal1$CEMOTION + internal1$CPEER
 internal1$DINT <- internal1$DDEMOTION + internal1$DDPEER
@@ -68,19 +67,59 @@ INTEXT <- merge(internal1, external1, by="Pingault_ID")
 myData <- merge(all_data_PSPC, INTEXT, by.x="CM_ID", by.y="Pingault_ID")
 myData <- merge(myData, SDQ, by.x="CM_ID", by.y="Pingault_ID")
 
-# STANDARDISE WITHIN TIME POINT
-# EXTERNALISING PROBLEMS
-myData$BEXT_z <- scale(myData$BEXT, center = 0, scale = 1)
-myData$CEXT_z <- scale(myData$CEXT, center = 0, scale = 1)
-myData$DEXT_z <- scale(myData$DEXT, center = 0, scale = 1)
-myData$FEXT_z <- scale(myData$FEXT, center = 0, scale = 1)
-
-# INTERNALISING PROBLEMS
-myData$BINT_z <- scale(myData$BINT, center = 0, scale = 1)
-myData$CINT_z <- scale(myData$CINT, center = 0, scale = 1)
-myData$DINT_z <- scale(myData$DINT, center = 0, scale = 1)
-myData$FINT_z <- scale(myData$FINT, center = 0, scale = 1)
 
 ```
 
+## Standardise variables within time point
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+
+# Notes:
+# Males = 1; Females = 0
+
+# TASK 1: Standardise variables #
+
+myData$zBINT <- scale(myData$BINT, center = T, scale = T)
+myData$zCINT <- scale(myData$CINT, center = T, scale = T)
+myData$zDINT <- scale(myData$DINT, center = T, scale = T)
+myData$zFINT <- scale(myData$FINT, center = T, scale = T)
+
+myData$zBEXT <- scale(myData$BEXT, center = T, scale = T)
+myData$zCEXT <- scale(myData$CEXT, center = T, scale = T)
+myData$zDEXT <- scale(myData$DEXT, center = T, scale = T)
+myData$zFEXT <- scale(myData$FEXT, center = T, scale = T)
+
+```
+
+## Create cross clinical threshold (>=15) variable
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+
+myData$BCCT <- 0; myData$BCCT[myData$BEBDTOT>=15] <- 1  
+myData$CCCT <- 0; myData$CCCT[myData$CEBDTOT>=15] <- 1
+myData$DCCT <- 0; myData$DCCT[myData$DDDEBDTOT>=15] <- 1
+myData$FCCT <- 0; myData$FCCT[myData$FEBDTOT>=15] <- 1
+
+table(myData$BCCT[myData$SEX==0])/sum(table(myData$BCCT[myData$SEX==0]))*100
+table(myData$CCCT[myData$SEX==0])/sum(table(myData$CCCT[myData$SEX==0]))*100
+table(myData$DCCT[myData$SEX==0])/sum(table(myData$DCCT[myData$SEX==0]))*100
+table(myData$FCCT[myData$SEX==0])/sum(table(myData$FCCT[myData$SEX==0]))*100
+
+table(myData$BCCT[myData$SEX==1])/sum(table(myData$BCCT[myData$SEX==1]))*100
+table(myData$CCCT[myData$SEX==1])/sum(table(myData$CCCT[myData$SEX==1]))*100
+table(myData$DCCT[myData$SEX==1])/sum(table(myData$DCCT[myData$SEX==1]))*100
+table(myData$FCCT[myData$SEX==1])/sum(table(myData$FCCT[myData$SEX==1]))*100
+```
+
+## Obtain means and standard deviations by sex
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+# Load libraries
+library(psych)
+
+describeBy(myData[,c('BEBDTOT','CEBDTOT','DDDEBDTOT','FEBDTOT')], group = myData$SEX)
+describeBy(myData[,c('BEXT','CEXT','DEXT','FEXT')], group = myData$SEX)
+describeBy(myData[,c('BINT','CINT','DINT','FINT')], group = myData$SEX)
+
+```
 
