@@ -7,39 +7,80 @@ output: html_document
 
 # Index
 
-The current document includes step-by-step instructions on how to:
+The current document describes:
 
-1. Convert PDF to Word.
-2. Import Word to R (string).
-3. Data cleaning.
-4. Spell check text files using OpenAI.
-5. Run basic text mining analyses on enquiry documents.
+1. Computing new variables and creating data sets for analysis.
 
-# Preliminary steps
+## Section 1: New variables and data sets.
 
-All source documents should be located in a sub-directories named 'data', 'data/pdf' and 'data/word'.
+Create Variables Create an additive score for internalising difficulties (emotional and peer problems) and externalising difficulties (conduct and hyperactivity problems).
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# Load packages
+library(foreign)
+
+# Create an object to store the file path
+file_path <- "path/to/your/GENDAC_PINGAULT_mcs_cm_structure_2021_05_12.sav"
+
+# Load MCS data
+CMstructure <- read.spss(file_path, to.data.frame=TRUE)
+
+# Extract internalising and externalising subscales
+internal_raw <- subset(CMstructure, select = c(Pingault_ID,BEMOTION,BPEER,CEMOTION,CPEER,DDEMOTION,DDPEER,FEMOTION,FPEER))
+external_raw <- subset(CMstructure, select =c(Pingault_ID,BCONDUCT,BHYPER,CCONDUCT,CHYPER,DDCONDUCT,DDHYPER,FCONDUCT,FHYPER))
+
+# Remove erroneous spaces in data using excel, and re-import
+internal1 <- internal_raw
+external1 <- external_raw
+internal1$Pingault_ID <- gsub(gsub('PNG_05A35003UD','',internal_raw$Pingault_ID[1]),'', internal_raw$Pingault_ID)
+external1$Pingault_ID <- gsub(gsub('PNG_05A35003UD','',external_raw$Pingault_ID[1]),'', external_raw$Pingault_ID)
+
+# Make factors numeric characters
+internal1$BEMOTION <- as.numeric(as.character(internal1$BEMOTION))
+internal1$BPEER <- as.numeric(as.character(internal1$BPEER))
+internal1$CEMOTION <- as.numeric(as.character(internal1$CEMOTION))
+internal1$CPEER <- as.numeric(as.character(internal1$CPEER))
+internal1$DDEMOTION <- as.numeric(as.character(internal1$DDEMOTION))
+internal1$DDPEER <- as.numeric(as.character(internal1$DDPEER))
+internal1$FEMOTION <- as.numeric(as.character(internal1$FEMOTION))
+internal1$FPEER <- as.numeric(as.character(internal1$FPEER))
+external1$BCONDUCT <- as.numeric(as.character(external1$BCONDUCT))
+external1$BHYPER <- as.numeric(as.character(external1$BHYPER))
+external1$CCONDUCT <- as.numeric(as.character(external1$CCONDUCT))
+external1$CHYPER <- as.numeric(as.character(external1$CHYPER))
+external1$DDHYPER <- as.numeric(as.character(external1$DDHYPER))
+external1$DDHYPER <- as.numeric(as.character(external1$DDHYPER))
+external1$FCONDUCT <- as.numeric(as.character(external1$FCONDUCT))
+external1$FHYPER <- as.numeric(as.character(external1$FHYPER))
+#Sum subscales to make internalising and externalising factors per sweep
+internal1$BINT <- internal1$BEMOTION + internal1$BPEER
+internal1$CINT <- internal1$CEMOTION + internal1$CPEER
+internal1$DINT <- internal1$DDEMOTION + internal1$DDPEER
+internal1$FINT <- internal1$FEMOTION + internal1$FPEER
+external1$BEXT <- external1$BCONDUCT + external1$BHYPER
+external1$CEXT <- external1$CCONDUCT + external1$CHYPER
+external1$DEXT <- external1$DDCONDUCT + external1$DDHYPER
+external1$FEXT <- external1$FCONDUCT + external1$FHYPER
+
+# Merge int and ext scores
+INTEXT <- merge(internal1, external1, by="Pingault_ID")
+myData <- merge(all_data_PSPC, INTEXT, by.x="CM_ID", by.y="Pingault_ID")
+myData <- merge(myData, SDQ, by.x="CM_ID", by.y="Pingault_ID")
+
+# STANDARDISE WITHIN TIME POINT
+# EXTERNALISING PROBLEMS
+myData$BEXT_z <- scale(myData$BEXT, center = 0, scale = 1)
+myData$CEXT_z <- scale(myData$CEXT, center = 0, scale = 1)
+myData$DEXT_z <- scale(myData$DEXT, center = 0, scale = 1)
+myData$FEXT_z <- scale(myData$FEXT, center = 0, scale = 1)
+
+# INTERNALISING PROBLEMS
+myData$BINT_z <- scale(myData$BINT, center = 0, scale = 1)
+myData$CINT_z <- scale(myData$CINT, center = 0, scale = 1)
+myData$DINT_z <- scale(myData$DINT, center = 0, scale = 1)
+myData$FINT_z <- scale(myData$FINT, center = 0, scale = 1)
+
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
