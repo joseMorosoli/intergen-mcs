@@ -79,8 +79,6 @@ myData <- merge(myData, SDQ, by.x="CM_ID", by.y="Pingault_ID")
 # Notes:
 # Males = 1; Females = 0
 
-# TASK 1: Standardise variables #
-
 myData$zBINT <- scale(myData$BINT, center = T, scale = T)
 myData$zCINT <- scale(myData$CINT, center = T, scale = T)
 myData$zDINT <- scale(myData$DINT, center = T, scale = T)
@@ -94,6 +92,8 @@ myData$zFEXT <- scale(myData$FEXT, center = T, scale = T)
 ```
 
 ## Create cross clinical threshold (>=15) variable
+
+Notes: Based on total score (combination of externalising and internalising difficulties)
 
 ```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
 
