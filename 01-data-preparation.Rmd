@@ -10,6 +10,8 @@ output: html_document
 The current document describes:
 
 1. Computing new variables and creating data sets for analysis.
+2. Standardising variables.
+3. Creating clinical threshold variable.
 
 ## Section 1: New variables and data sets.
 
