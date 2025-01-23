@@ -1,8 +1,12 @@
 ---
-title: "03-visualisation"
+title: "Main analyses"
 author: "Jose J. Morosoli"
-date: "2025-01-22"
-output: html_document
+date: "2025-01-21"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 The current document describes:
@@ -11,8 +15,9 @@ The current document describes:
 2. Data handling and how to create the plotting function.
 3. Creating plots.
 
-# Section 1: How to re-run best fitting models.
+# How to re-run best fitting models.
 ## Educational Attainment
+
 ```{r echo=F, results='hide', error=F, warning=F, message=F, eval=F}
 
 # formulas where trio PGS effects are FREE to vary over time (ext) but constrained across parents (both)
@@ -53,7 +58,9 @@ model_ea_bestTidy
 # Fit the free model
 model_ea_best_fit <- sem(model_ea_bestTidy, data=myData_checked, missing = "ML")
 ```
+
 ## Cognitive and non-cognitive component
+
 ```{r echo=F, results='hide', error=F, warning=F, message=F, eval=F}
 
 #formulas where trio PGS effects are FREE to vary over time (ext) but constrained across parents (both)
@@ -112,7 +119,9 @@ model_comp_bestTidy <- noquote(strsplit(model_comp_best, "\n")[[1]])
 # Fit the free model
 comp_best_fit <- sem(model_comp_bestTidy, data=myData_checked, missing = "ML")
 ```
-# Section 2: Data handling and how to create the plotting function
+
+# Data handling and how to create the plotting function
+
 ```{r echo=F, results='hide', error=F, warning=F, message=F, eval=F}
 
 # Create dataframe with estimates from best fitting model
@@ -188,7 +197,9 @@ names(beta.10PCs.wide)[9] <- 'lower_CI_model_mother'
 names(beta.10PCs.wide)[12] <- 'upper_CI_model_mother'
 beta.10PCs.wide_onlyext <- beta.10PCs.wide[beta.10PCs.wide$outcome_f=='Externalising Score',]
 ```
+
 ## Create plotting function
+
 ```{r echo=F, results='hide', error=F, warning=F, message=F, eval=F}
 
 plot_beta2 = function(model) {  
@@ -255,7 +266,9 @@ plot_beta2 = function(model) {
   plot(myplot_panel)
 }
 ```
-# Section 3: Run plotting function and store result
+
+# Run plotting function and store result
+
 ```{r echo=F, results='hide', error=F, warning=F, message=F, eval=F}
 
 plot_10PCs <- plot_beta2(beta.10PCs.wide_onlyext)

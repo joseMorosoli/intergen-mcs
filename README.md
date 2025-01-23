@@ -9,7 +9,8 @@ Link to preprint: https://osf.io/preprints/psyarxiv/hc3b5
 - 02-calculate-pgs.Rmd - implementation of LDPred2 pipeline to calculate PGS.
 - 03-data-preparation.Rmd - new variables and dataframes to use in the analysis phase.
 - 04-main-analyses.Rmd - trio models and model comparison.
-- 05-power-trio.Rmd - power analyses for polygenic score approach using trios.
+- 05-visualisation.Rmd - plotting results.
+- 06-power-trio.Rmd - power analyses for polygenic score approach using trios.
 
 The original pipeline to compute polygenic scores with LDpred2 can be found at https://github.com/AndreAllegrini/LDpred2
 
