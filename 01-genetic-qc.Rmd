@@ -1,0 +1,402 @@
+---
+title: "follow up QC for MCS"
+author: "Biyao Wang"
+date: "`r format(Sys.time(), '%d/%m/%y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Index
+
+The current document describes:
+
+1. Genetic quality control.
+2. Principal component analysis.
+3. Identify and extract complete trios.
+
+# Qualitry control
+## Preliminary QC in plink 
+
+```
+DIR="/lustre/scratch/scratch/ucjues9/mcs/genotype/output/"
+
+module load plink/1.90b3.40
+
+plink --bfile ${DIR}mcs_imputed_allchr \
+      --mind 0.05  --geno 0.05 --maf 0.01 --hwe 0.000001 \
+      --extract /home/ucjues9/Scratch/mcs/genotype/rsq/70.rsq \
+      --make-bed --out ${DIR}mcs_imputed_allchr_minQC
+```
+
+## Follow-up quality control
+
+```{r, eval=FALSE}
+cd /lustre/projects/CMAP/data/MCS/genotype/plink
+
+wc -l mcs_imputed_allchr.bim         # 38909200 SNPs
+wc -l mcs_imputed_allchr.fam         # 21349 individuals
+
+wc -l mcs_imputed_allchr_minQC.bim   # 6948515 SNPs
+wc -l mcs_imputed_allchr_minQC.fam   # 21349 individuals
+```
+
+### Update FID and IID 
+
+Create the update id file with the following four fields:
+
+- Old family ID
+- Old within-family ID
+- New family ID
+- New within-family ID
+
+```{r engine = 'bash', eval = FALSE}
+
+cd /lustre/projects/CMAP/data/MCS/genotype/imputed_QCed/output
+head mcs_imputed_allchr.fam
+awk '{print $1}' mcs_imputed_allchr.fam > fam_onlyIID_raw.txt  # save only the IID column
+head fam_onlyIID_raw.txt
+cut -d_ -f1,2 fam_onlyIID_raw.txt > fam_onlyIID_new.txt  # remove everything after the second "_"
+head fam_onlyIID_new.txt
+paste fam_onlyIID_raw.txt fam_onlyIID_new.txt > fam_onlyIID_rawnew.txt 
+head fam_onlyIID_rawnew.txt 
+
+module unload compilers mpi
+module load r/recommended   
+R
+```
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+library(tidyverse)
+library(haven)
+
+setwd("/lustre/projects/CMAP/data/MCS/phenotype/MDAC-2020-0016-05A-PINGAULT")
+df <- read_spss("MDAC-2020-0016-05A-PINGAULT_unifed_ega_2021_12_13.sav") 
+head(df)
+fam_pheno <- df %>%
+  select(FID_pheno = 2, IID_pheno = 1) 
+head(fam_pheno)  
+
+setwd("/lustre/projects/CMAP/data/MCS/genotype/imputed_QCed/output")
+fam_geno <- read_tsv("fam_onlyIID_rawnew.txt", col_names = F)
+head(fam_geno)
+colnames(fam_geno) <- c("IID_geno_raw", "IID_geno_new")
+head(fam_geno)
+
+fam_geno$FID_geno_new <- fam_pheno$FID_pheno[match(fam_geno$IID_geno_new, fam_pheno$IID_pheno)]
+head(fam_geno)
+
+fam_update <- fam_geno[,c(1,1,3,2)]
+head(fam_update)
+colnames(fam_update) <- c("FID_old", "IID_old", "FID_new", "IID_new")
+head(fam_update)
+
+write.table(fam_update, file=paste0("fam_update.txt"),col.names = T, row.names = F, quote=F, sep = "\t")
+q(save="no")
+```
+
+```{r engine = 'bash', eval = FALSE}
+
+echo '
+#!/bin/bash -l
+#$ -l h_rt=0:30:00
+#$ -l mem=5G
+#$ -l tmpfs=15G
+#$ -N updateid
+#$ -pe smp 16
+#$ -wd /lustre/projects/CMAP/data/MCS/genotype/imputed_QCed/log
+
+cd $TMPDIR
+
+cd /lustre/projects/CMAP/data/MCS/genotype/imputed_QCed/output
+
+module load plink/1.90b3.40
+
+plink --bfile mcs_imputed_allchr_minQC \
+      --update-ids fam_update.txt \
+      --make-bed \
+      --out mcs_imputed_allchr_minQC_updateID
+' > updateid.sh
+qsub updateid.sh
+
+```
+
+### Pruning
+
+```{r engine = 'bash', eval = FALSE}
+
+module load plink/1.90b3.40
+
+plink --bfile ${DIR}/mcs_imputed_allchr \
+      --indep-pairwise 250 50 0.1 \
+      --out ${DIR}/mcs_imputed_allchr_pruned
+
+
+```
+
+### Heterozygosity QC
+
+```{r engine = 'bash', eval = FALSE}
+module load plink/1.90b3.40
+
+plink --bfile ${DIR}/mcs_imputed_allchr_minQC_updateID \
+      --extract ${DIR}/mcs_imputed_allchr_pruned.prune.in \
+      --het \
+      --out ${DIR}/mcs_imputed_allchr_minQC_updateID_checkhet
+
+```
+
+### List heterozygosity rate outliers
+
+```{r engine = 'bash', eval = FALSE}
+
+module unload compilers mpi
+module load r/recommended   
+cd /lustre/projects/CMAP/data/MCS/genotype/imputed_QCed/output
+R 
+```
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+library(foreign)
+
+het <- read.table("mcs_imputed_allchr_minQC_updateID_checkhet.het", head=TRUE)
+het$HET_RATE = (het$"N.NM." - het$"O.HOM.")/het$"N.NM."
+het_fail = subset(het, (het$HET_RATE < mean(het$HET_RATE)-3*sd(het$HET_RATE)) | (het$HET_RATE > mean(het$HET_RATE)+3*sd(het$HET_RATE)))
+het_fail$HET_DST = (het_fail$HET_RATE-mean(het$HET_RATE))/sd(het$HET_RATE)
+write.table(het_fail, "fail-het-qc.txt", row.names=FALSE)
+
+q(save = "no")
+```
+
+```{r engine = 'bash', eval = FALSE}
+head fail-het-qc.txt
+wc -l fail-het-qc.txt  # 547 outliers + 1 header
+sed 's/"// g' fail-het-qc.txt | awk '{print $1, $2}' | tail -n +2 > het_fail_list.txt
+head het_fail_list.txt
+wc -l het_fail_list.txt
+```
+
+### Remove heterozygosity rate outliers
+
+```{r engine = 'bash', eval = FALSE}
+
+module load plink/1.90b3.40
+
+plink --bfile mcs_imputed_allchr_minQC_updateID \
+      --remove het_fail_list.txt \
+      --make-bed \
+      --out mcs_imputed_allchr_minQC_updateID_hetQC
+
+```
+
+### Relatedness QC
+Check in phenotypic data.
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+library(tidyverse)
+library(glue)
+library(haven)
+
+fam_pheno <- read_spss("MDAC-2020-0016-05A-PINGAULT_unifed_ega_2021_12_13.sav") 
+head(fam_pheno)
+df <- fam_pheno %>%
+  select(FID = 2, IID = 1, MFC) 
+head(df)  
+
+df %>%
+  count(FID, MFC) %>%
+  count(MFC, n, name = "total") 
+# more than two individual with the same role in a family
+# 151 children
+# 10 fathers
+# 21 mothers
+
+```
+
+## separate children and parents
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+
+library(tidyverse)
+library(haven)
+
+df <- read_spss("MDAC-2020-0016-05A-PINGAULT_unifed_ega_2021_12_13.sav") 
+
+fam_pheno <- df %>%
+  select(IID = 1, MFC) 
+
+fam_geno <- read.table("mcs_imputed_allchr_minQC_updateID.fam", sep = " " , header = F)
+
+colnames(fam_geno) <- c("FID", "IID", "X1", "X2", "X3", "X4")
+
+fam_geno$MFC <- fam_pheno$MFC[match(fam_geno$IID, fam_pheno$IID)]
+
+child <- fam_geno %>%
+  filter(MFC == "C") 
+
+parent <- fam_geno %>%
+  filter(MFC != "C") 
+  
+write.table(child[,-7], file=paste0("children.txt"),col.names = F, row.names = F, quote=F, sep = "\t")
+write.table(parent[,-7], file=paste0("parents.txt"),col.names = F, row.names = F, quote=F, sep = "\t")
+
+```
+
+```{r engine = 'bash', eval = FALSE}
+module load plink/1.90b3.40
+
+plink --bfile ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC \
+      --keep ${DIR}/children.txt \
+      --make-bed \
+      --out ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC_children
+      
+plink --bfile ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC \
+      --keep ${DIR}/parents.txt \
+      --make-bed \
+      --out ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC_parents
+
+```
+
+### Get a list of unrelated children and parents 
+
+```{r, eval=FALSE}
+
+# Check relatedness between children
+/lustre/projects/CMAP/data/MCS/genotype/imputed_QCed/king  -b ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC_children.bed \
+      --related \
+      --degree 3 \
+      --cpus 36 \
+      --prefix ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC_children_relatedness
+
+# Get a list of unrelated children    
+/lustre/projects/CMAP/data/MCS/genotype/imputed_QCed/king  -b ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC_children.bed \
+      --unrelated \
+      --degree 3 \
+      --cpus 36 \
+      --prefix ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC_children_3rd_
+
+wc -l output/mcs_imputed_allchr_minQC_updateID_hetQC_children_3rd_unrelated.txt              # 7822
+wc -l output/mcs_imputed_allchr_minQC_updateID_hetQC_children_3rd_unrelated_toberemoved.txt  # 164
+
+# Check relatedness between parents
+/lustre/projects/CMAP/data/MCS/genotype/imputed_QCed/king  -b ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC_parents.bed \
+      --related \
+      --degree 3 \
+      --prefix ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC_parents_relatedness
+                     
+# Get a list of unrelated parents
+/lustre/projects/CMAP/data/MCS/genotype/imputed_QCed/king  -b ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC_parents.bed \
+      --unrelated \
+      --degree 3 \
+      --cpus 36 \
+      --prefix ${DIR}/mcs_imputed_allchr_minQC_updateID_hetQC_parents_3rd_
+
+wc -l output/mcs_imputed_allchr_minQC_updateID_hetQC_parents_3rd_unrelated.txt              # 12458
+wc -l output/mcs_imputed_allchr_minQC_updateID_hetQC_parents_3rd_unrelated_toberemoved.txt  # 241
+
+```
+
+### Remove related individuals
+
+```{r engine = 'bash', eval = FALSE}
+cat mcs_imputed_allchr_minQC_updateID_hetQC_children_3rd_unrelated.txt mcs_imputed_allchr_minQC_updateID_hetQC_parents_3rd_unrelated.txt > mcs_imputed_allchr_minQC_updateID_hetQC_unrelated.txt
+
+wc -l mcs_imputed_allchr_minQC_updateID_hetQC_unrelated.txt # 20280
+
+module load plink/1.90b3.40
+
+plink --bfile mcs_imputed_allchr_minQC_updateID_hetQC \
+      --keep mcs_imputed_allchr_minQC_updateID_hetQC_unrelated.txt \
+      --make-bed \
+      --out mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC
+
+```
+
+# Principal Component Analysis
+
+```{r engine = 'bash', eval = FALSE}
+
+module load plink/1.90b3.40
+
+plink --bfile mcs_imputed_allchr_minQC_updateID_hetQC \
+      --extract mcs_imputed_allchr_pruned.prune.in \
+      --pca \
+      --out mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC
+
+# These are the eigenvalues explained by each principal component, by default, plink estimates 20
+head mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC.eigenvec
+
+# These are the actual 20 pca for each individual in the data set
+```
+
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+
+# import PCs
+PCs = read.table("output/mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC.eigenvec", header=FALSE)
+head(PCs)
+colnames(PCs) = c("FID", "IID", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10", "PC11", "PC12", "PC13", "PC14", "PC15", "PC16", "PC17", "PC18", "PC19", "PC20")
+
+# export PCs
+write.table(PCs, file="output/mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC_PCs.csv",col.names = T, row.names = F, quote=F, sep = "\t")
+save(PCs, file = "output/mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC_PCs.RData")
+```
+
+# Get complete trios
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+
+# Load libraries
+library(tidyverse)
+library(haven)
+
+# Load data
+fam_pheno <- read_spss("MDAC-2020-0016-05A-PINGAULT_unifed_ega_2021_12_13.sav") 
+
+df_pheno <- fam_pheno %>%
+  select(FID = 2, IID = 1, MFC) 
+
+fam_geno <- read.table("mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC.fam", sep = " " , header = F)
+colnames(fam_geno) <- c("FID", "IID", "PID","MID","Sex","Pheno")
+
+df_geno <- fam_geno %>%
+  select(FID = 1, IID = 2) 
+
+df_geno$MFC <- df_pheno$MFC[match(df_geno$IID, df_pheno$IID)]
+
+# extract children, mothers and fathers 
+children <- subset(df_geno,MFC=="C")
+mothers <- subset(df_geno,MFC=="M")
+fathers <- subset(df_geno,MFC=="F")
+
+# family ID of trios
+commonFID <- Reduce(intersect, list(children$FID, mothers$FID, fathers$FID))
+length(commonFID)    # 3228
+
+# extract trios
+trios <- fam_geno[fam_geno$FID %in% commonFID,]
+
+# save trios fam file
+write.table(trios, file="mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC_completetrios.txt", row=F, col=F, qu=F)
+```
+
+## Extract unrelated complete trios
+
+```{r engine = 'bash', eval = FALSE}
+
+module load plink/1.90b3.40
+
+plink --bfile mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC \
+      --keep mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC_completetrios.txt \
+      --make-bed \
+      --out mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC_trios
+
+wc -l output/mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC_trios.fam
+
+```

@@ -1,0 +1,416 @@
+---
+title: "Data preparation"
+author: "Jose J. Morosoli"
+date: "2025-01-21"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+# Index
+
+The current document describes:
+
+1. Computing new variables and creating data sets for analysis.
+2. Standardising variables.
+3. Creating clinical threshold variable.
+
+
+## New variables and data sets.
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+# Load packages
+library(foreign)
+
+# Create an object to store the file path
+file_path <- "path/to/your/file/"
+
+# Load files Files here were stored locally but are all available on the cluster. 
+# PGS were generated previously using LDpred2.
+
+# Download files containing participant phenotypic information.
+# CM-answered questionnaires and derived variables
+CMstructure <- read.spss(paste(file_path,"GENDAC_PINGAULT_mcs_cm_structure_2021_05_12.sav", sep = ""), to.data.frame=TRUE)
+
+# Parent answered questionnaires
+parentstructure <- read.spss(paste(file_path,"GENDAC_PINGAULT_mcs_parent_structure_2021_05_12.sav", sep = ""),  to.data.frame=TRUE)
+
+# Parent on behalf of CM answered questionnaires
+parentCMstructure <- read.spss((paste(file_path,"GENDAC_PINGAULT_mcs_parent_cm_structure_2021_05_12.sav", sep = "", to.data.frame=TRUE)
+
+# Load PGS data from LDpred2 analysis 
+EApgs <- read.table((paste(file_path,"EA3_no23.csv.gz_pred_auto.txt", sep = ""), header=TRUE)
+CPpgs <- read.table((paste(file_path,"CP_all.csv.gz_pred_auto.txt", sep = ""), header=TRUE)
+NCPpgs <- read.table((paste(file_path,"NonCog_no23.csv.gz_pred_auto.txt", sep = ""), header = TRUE)
+
+```
+
+### Create dataframes 
+
+Note: Including phenotypic (mental health, demographics etc) and genotypic (PGS) information per trait (EA, CP, NCP).
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+
+{
+  library(tidyverse)
+  library(foreign)
+  library(dplyr)
+  
+  # Load data frame used to match IDs
+  matches <- read.spss(paste(file_path,"MDAC-2020-0016-05A-PINGAULT_unifed_ega_2021_12_13.sav", sep = ""), to.data.frame=TRUE)
+  
+  # Create data frame for standardised SDQ scores
+  SDQ <- subset(CMstructure, select=c(Pingault_ID, BEBDTOT, CEBDTOT, DDDEBDTOT, FEBDTOT))
+  # Remove erroneous spaces from Family ID column in Excel and reimport
+  SDQ$Pingault_ID <- gsub(gsub('PNG_05A35003UD','',SDQ$Pingault_ID[1]),'', SDQ$Pingault_ID)
+  
+  # Standardise SDQ scores
+  SDQ_standard <- SDQ %>%
+    mutate_if(is.numeric, scale)
+  
+  # Check that we get mean of 0 and SD of 1
+  colMeans(subset(SDQ_standard, select=c(BEBDTOT, CEBDTOT, DDDEBDTOT, FEBDTOT)), na.rm=TRUE)
+  apply(subset(SDQ_standard, select=c(BEBDTOT, CEBDTOT, DDDEBDTOT, FEBDTOT)), 2, sd, na.rm = TRUE)
+  
+  # Standardise PGSs
+  EApgs <- EApgs %>%
+    mutate_if(is.numeric, scale)
+  CPpgs <- CPpgs %>%
+    mutate_if(is.numeric, scale)
+  NCPpgs <- NCPpgs %>%
+    mutate_if(is.numeric, scale)
+  
+  # Check that we get means of 0 and SDs of 1
+  mean(EApgs$final_pred_auto, na.rm=TRUE)
+  sd(EApgs$final_pred_auto, na.rm = TRUE)
+  mean(CPpgs$final_pred_auto, na.rm=TRUE)
+  sd(CPpgs$final_pred_auto, na.rm = TRUE)  
+  mean(NCPpgs$final_pred_auto, na.rm=TRUE)
+  sd(NCPpgs$final_pred_auto, na.rm = TRUE)
+  
+  # Create dataframes containing mental health scores and PGSs with one family trio per row
+  # Educational attainment PGS
+  {  
+    PGS <- EApgs
+    # Merge PGS with data for matching IDs
+    matches_PGS <- merge(matches, PGS, by.x="Pingault_ID", by.y="sample.ID")
+    matches_PGS[9:10]<-NULL # remove extra parental ID columns
+    
+    # Create data frame for child information
+    child_PGS <- subset(matches_PGS, MFC == 'C         ')  # note dataframe also contains spaces after trio ID
+    child_PGS_SDQ <- merge(SDQ_standard, child_PGS, by = "Pingault_ID") # add child total SDQ score
+    
+    # Rename columns to label as child data (_C)
+    child_data_EA <- child_PGS_SDQ %>% 
+      rename(
+        CM_ID = Pingault_ID,
+        SDQ2 = BEBDTOT,
+        SDQ3 = CEBDTOT,
+        SDQ4 = DDDEBDTOT,
+        SDQ6 = FEBDTOT,
+        EA_PGS_C = final_pred_auto, 
+        SEX_C = SEX,
+        REGION_C = REGION,
+        ETHNICITY_C = ETHNICITY
+      )
+    child_data_EA$family.ID=NULL # remove duplicate fam ID column
+    
+    # create dataframe for mother information
+    # subset mother PGS and rename to label as mother data (_M)
+    mother_PGS <- subset(matches_PGS, MFC == 'M         ')
+    mother_data_EA <- mother_PGS %>% 
+      rename(
+        M_ID = Pingault_ID,
+        EA_PGS_M = final_pred_auto, 
+        SEX_M = SEX,
+        REGION_M = REGION,
+        ETHNICITY_M = ETHNICITY
+      )
+    mother_data_EA$family.ID=NULL # remove duplicate fam ID column
+    
+    # create dataframe for father information
+    # subset father PGS and rename to label as father data (_F)
+    father_PGS <- subset(matches_PGS, MFC == 'F         ')
+    father_data_EA <- father_PGS %>% 
+      rename(
+        F_ID = Pingault_ID,
+        EA_PGS_F = final_pred_auto, 
+        SEX_F = SEX,
+        REGION_F = REGION,
+        ETHNICITY_F = ETHNICITY
+      )
+    father_data_EA$family.ID=NULL # remove duplicate fam ID column
+    
+    # merge child, mother, father by family ID
+    EA_data <- list(child_data_EA, mother_data_EA, father_data_EA) %>% reduce(left_join, by = "Pingault_FID")
+  }
+  
+  # Cognitive performance PGS
+  {
+    PGS <- CPpgs
+    
+    # merge PGS with data for matching IDs
+    matches_PGS <- merge(matches, PGS, by.x="Pingault_ID", by.y="sample.ID")
+    matches_PGS[9:10]<-NULL # remove extra parental ID columns
+    
+    # create data frame for child information
+    child_PGS <- subset(matches_PGS, MFC == 'C         ')
+    child_PGS_SDQ <- merge(SDQ_standard, child_PGS, by = "Pingault_ID") 
+    
+    # Rename columns to label as child data (_C)
+    child_data_CP <- child_PGS_SDQ %>% 
+      rename(
+        CM_ID = Pingault_ID,
+        SDQ2 = BEBDTOT,
+        SDQ3 = CEBDTOT,
+        SDQ4 = DDDEBDTOT,
+        SDQ6 = FEBDTOT,
+        CP_PGS_C = final_pred_auto, 
+        SEX_C = SEX,
+        REGION_C = REGION,
+        ETHNICITY_C = ETHNICITY
+      )
+    child_data_CP$family.ID=NULL # remove duplicate fam ID column
+    
+    # create dataframe for mother information
+    # subset mother PGS and rename to label as mother data (_M)
+    mother_PGS <- subset(matches_PGS, MFC == 'M         ')
+    mother_data_CP <- mother_PGS %>% 
+      rename(
+        M_ID = Pingault_ID,
+        CP_PGS_M = final_pred_auto, 
+        SEX_M = SEX,
+        REGION_M = REGION,
+        ETHNICITY_M = ETHNICITY
+      )
+    mother_data_CP$family.ID=NULL # remove duplicate fam ID column
+    
+    # create dataframe for father information
+    # subset father PGS and rename to label as father data (_F)
+    father_PGS <- subset(matches_PGS, MFC == 'F         ')
+    father_data_CP <- father_PGS %>% 
+      rename(
+        F_ID = Pingault_ID,
+        CP_PGS_F = final_pred_auto, 
+        SEX_F = SEX,
+        REGION_F = REGION,
+        ETHNICITY_F = ETHNICITY
+      )
+    father_data_CP$family.ID=NULL # remove duplicate fam ID column
+    
+    # merge child, mother, father by family ID
+    CP_data <- list(child_data_CP, mother_data_CP, father_data_CP) %>% reduce(left_join, by = "Pingault_FID")
+  }
+  
+  # Non-cognitive PGS
+  {
+    PGS <- NCPpgs
+    # merge PGS with matches data
+    matches_PGS <- merge(matches, PGS, by.x="Pingault_ID", by.y="sample.ID")
+    matches_PGS[9:10]<-NULL #remove extra parental ID columns
+    
+    # create data frame for child information
+    child_PGS <- subset(matches_PGS, MFC == 'C         ')
+    child_PGS_SDQ <- merge(SDQ_standard, child_PGS, by = "Pingault_ID") 
+    # Rename columns to label as child data (_C)
+    child_data_NCP <- child_PGS_SDQ %>%
+      rename(
+        CM_ID = Pingault_ID,
+        SDQ2 = BEBDTOT,
+        SDQ3 = CEBDTOT,
+        SDQ4 = DDDEBDTOT,
+        SDQ6 = FEBDTOT,
+        NCP_PGS_C = final_pred_auto, 
+        SEX_C = SEX,
+        REGION_C = REGION,
+        ETHNICITY_C = ETHNICITY
+      )
+    child_data_NCP$family.ID=NULL # remove duplicate fam ID column
+    
+    # create dataframe for mother information
+    # subset mother PGS and rename to label as mother data (_M)
+    mother_PGS <- subset(matches_PGS, MFC == 'M         ')
+    mother_data_NCP <- mother_PGS %>%
+      rename(
+        M_ID = Pingault_ID,
+        NCP_PGS_M = final_pred_auto, 
+        SEX_M = SEX,
+        REGION_M = REGION,
+        ETHNICITY_M = ETHNICITY
+      )
+    mother_data_NCP$family.ID=NULL # remove duplicate fam ID column
+    
+    # create dataframe for father information
+    # subset father PGS and rename to label as father data (_F)
+    father_PGS <- subset(matches_PGS, MFC == 'F         ')
+    father_data_NCP <- father_PGS %>%
+      rename(
+        F_ID = Pingault_ID,
+        NCP_PGS_F = final_pred_auto, 
+        SEX_F = SEX,
+        REGION_F = REGION,
+        ETHNICITY_F = ETHNICITY
+      )
+    father_data_NCP$family.ID=NULL # remove duplicate fam ID column
+    
+    # merge child, mother, father by family ID
+    NCP_data <- list(child_data_NCP, mother_data_NCP, father_data_NCP) %>% reduce(left_join, by = "Pingault_FID")
+  }
+}
+```
+
+### Merge data for each trait into a single data frame.
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+
+{
+  # merge EA, CP and NCP
+  EA_data_subset <- subset(EA_data, select=-c(PNUM.x, MFC.x, PNUM.y, MFC.y, PNUM, MFC))
+  CP_data_subset <- subset(CP_data, select=c(Pingault_FID, CP_PGS_C, CP_PGS_M, CP_PGS_F))
+  NCP_data_subset <- subset(NCP_data, select=c(Pingault_FID, NCP_PGS_C, NCP_PGS_M, NCP_PGS_F))
+  all_data <- list(EA_data_subset, CP_data_subset, NCP_data_subset) %>% reduce(left_join, by = "Pingault_FID")
+  
+}
+
+```
+
+### Add in population stratification Principle components (PSPCs)
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+
+{# load PC file (20PCs)
+  PS_PC <- read.table("C:/Users/Jose Morosoli/Documents/UCL/MCS/mcs_imputed_allchr_minQC_updateID_hetQC_relatedQC_PCs.txt", sep = "\t", header=TRUE)
+  PSPCID <- subset(PS_PC, select=-c(FID))
+  
+  # inspect distribution
+  colMeans(select(PSPCID, starts_with("PC")))
+  apply(select(PSPCID, starts_with("PC")), 2, sd, na.rm = TRUE)
+  
+  # Match participant IDs to their PSPCs
+  trio_ID <- subset(matches, select=c(Pingault_ID, Pingault_FID, MFC))
+  trio_ID_PSPC <- merge(trio_ID, PSPCID, by.x="Pingault_ID", by.y="IID")
+  
+  # select CHILD PCs only - only these will be included in analysis
+  child_PSPC <- subset(trio_ID_PSPC, MFC == 'C         ', select=-c(Pingault_ID, MFC))
+  child_data_PSPC <- child_PSPC %>% rename_with(.fn = ~paste0(., "_C"), .cols = c(starts_with("PC"))) #add indicator that this is child info
+  # scale PCs to mean=0, SD=1
+  library(dplyr)
+  child_PSPC_scaled <- child_data_PSPC %>%
+    mutate_if(is.numeric, scale)
+  
+  # check scaling worked
+  colMeans(select(child_PSPC_scaled, starts_with("PC")))
+  apply(select(child_PSPC_scaled, starts_with("PC")), 2, sd, na.rm = TRUE)
+  
+  # add child PSPCs to the main data frame
+  library(tidyverse)
+  all_data_PSPC <- list(all_data, child_PSPC_scaled) %>% reduce(left_join, by = "Pingault_FID")
+  head(all_data_PSPC)
+  colMeans(select(child_data_PSPC, starts_with("PC"))) #double check scaling worked
+  apply(select(all_data_PSPC, starts_with("PC")), 2, sd, na.rm = TRUE)
+}
+
+# Load MCS data
+CMstructure <- read.spss(paste(file_path,"GENDAC_PINGAULT_mcs_cm_structure_2021_05_12.sav",sep = ""), to.data.frame=TRUE)
+
+# Extract internalising and externalising subscales
+internal_raw <- subset(CMstructure, select = c(Pingault_ID,BEMOTION,BPEER,CEMOTION,CPEER,DDEMOTION,DDPEER,FEMOTION,FPEER))
+external_raw <- subset(CMstructure, select =c(Pingault_ID,BCONDUCT,BHYPER,CCONDUCT,CHYPER,DDCONDUCT,DDHYPER,FCONDUCT,FHYPER))
+
+# Remove erroneous spaces in data using excel, and re-import
+internal1 <- internal_raw
+external1 <- external_raw
+internal1$Pingault_ID <- gsub(gsub('PNG_05A35003UD','',internal_raw$Pingault_ID[1]),'', internal_raw$Pingault_ID)
+external1$Pingault_ID <- gsub(gsub('PNG_05A35003UD','',external_raw$Pingault_ID[1]),'', external_raw$Pingault_ID)
+
+# Make factors numeric characters
+internal1$BEMOTION <- as.numeric(as.character(internal1$BEMOTION))
+internal1$BPEER <- as.numeric(as.character(internal1$BPEER))
+internal1$CEMOTION <- as.numeric(as.character(internal1$CEMOTION))
+internal1$CPEER <- as.numeric(as.character(internal1$CPEER))
+internal1$DDEMOTION <- as.numeric(as.character(internal1$DDEMOTION))
+internal1$DDPEER <- as.numeric(as.character(internal1$DDPEER))
+internal1$FEMOTION <- as.numeric(as.character(internal1$FEMOTION))
+internal1$FPEER <- as.numeric(as.character(internal1$FPEER))
+external1$BCONDUCT <- as.numeric(as.character(external1$BCONDUCT))
+external1$BHYPER <- as.numeric(as.character(external1$BHYPER))
+external1$CCONDUCT <- as.numeric(as.character(external1$CCONDUCT))
+external1$CHYPER <- as.numeric(as.character(external1$CHYPER))
+external1$DDHYPER <- as.numeric(as.character(external1$DDHYPER))
+external1$DDHYPER <- as.numeric(as.character(external1$DDHYPER))
+external1$FCONDUCT <- as.numeric(as.character(external1$FCONDUCT))
+external1$FHYPER <- as.numeric(as.character(external1$FHYPER))
+
+# Sum subscales to make internalising and externalising factors per sweep
+internal1$BINT <- internal1$BEMOTION + internal1$BPEER
+internal1$CINT <- internal1$CEMOTION + internal1$CPEER
+internal1$DINT <- internal1$DDEMOTION + internal1$DDPEER
+internal1$FINT <- internal1$FEMOTION + internal1$FPEER
+external1$BEXT <- external1$BCONDUCT + external1$BHYPER
+external1$CEXT <- external1$CCONDUCT + external1$CHYPER
+external1$DEXT <- external1$DDCONDUCT + external1$DDHYPER
+external1$FEXT <- external1$FCONDUCT + external1$FHYPER
+
+# Merge int and ext scores
+INTEXT <- merge(internal1, external1, by="Pingault_ID")
+myData <- merge(all_data_PSPC, INTEXT, by.x="CM_ID", by.y="Pingault_ID")
+myData <- merge(myData, SDQ, by.x="CM_ID", by.y="Pingault_ID")
+
+
+```
+
+## Standardise phenotipic variables within time point
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+
+# Notes:
+# Males = 1; Females = 0
+
+myData$zBINT <- scale(myData$BINT, center = T, scale = T)
+myData$zCINT <- scale(myData$CINT, center = T, scale = T)
+myData$zDINT <- scale(myData$DINT, center = T, scale = T)
+myData$zFINT <- scale(myData$FINT, center = T, scale = T)
+
+myData$zBEXT <- scale(myData$BEXT, center = T, scale = T)
+myData$zCEXT <- scale(myData$CEXT, center = T, scale = T)
+myData$zDEXT <- scale(myData$DEXT, center = T, scale = T)
+myData$zFEXT <- scale(myData$FEXT, center = T, scale = T)
+
+```
+
+## Create cross clinical threshold (>=15) variable
+
+Notes: Based on total score (combination of externalising and internalising difficulties)
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+
+myData$BCCT <- 0; myData$BCCT[myData$BEBDTOT>=15] <- 1  
+myData$CCCT <- 0; myData$CCCT[myData$CEBDTOT>=15] <- 1
+myData$DCCT <- 0; myData$DCCT[myData$DDDEBDTOT>=15] <- 1
+myData$FCCT <- 0; myData$FCCT[myData$FEBDTOT>=15] <- 1
+
+table(myData$BCCT[myData$SEX==0])/sum(table(myData$BCCT[myData$SEX==0]))*100
+table(myData$CCCT[myData$SEX==0])/sum(table(myData$CCCT[myData$SEX==0]))*100
+table(myData$DCCT[myData$SEX==0])/sum(table(myData$DCCT[myData$SEX==0]))*100
+table(myData$FCCT[myData$SEX==0])/sum(table(myData$FCCT[myData$SEX==0]))*100
+
+table(myData$BCCT[myData$SEX==1])/sum(table(myData$BCCT[myData$SEX==1]))*100
+table(myData$CCCT[myData$SEX==1])/sum(table(myData$CCCT[myData$SEX==1]))*100
+table(myData$DCCT[myData$SEX==1])/sum(table(myData$DCCT[myData$SEX==1]))*100
+table(myData$FCCT[myData$SEX==1])/sum(table(myData$FCCT[myData$SEX==1]))*100
+```
+
+### Additional step: Obtain means and standard deviations by sex
+
+```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
+# Load libraries
+library(psych)
+
+describeBy(myData[,c('BEBDTOT','CEBDTOT','DDDEBDTOT','FEBDTOT')], group = myData$SEX)
+describeBy(myData[,c('BEXT','CEXT','DEXT','FEXT')], group = myData$SEX)
+describeBy(myData[,c('BINT','CINT','DINT','FINT')], group = myData$SEX)
+
+```
+
