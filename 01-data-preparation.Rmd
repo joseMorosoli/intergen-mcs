@@ -13,7 +13,7 @@ The current document describes:
 2. Standardising variables.
 3. Creating clinical threshold variable.
 
-## Section 1: New variables and data sets.
+## New variables and data sets.
 
 ```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
 # Load packages
@@ -42,7 +42,9 @@ NCPpgs <- read.table((paste(file_path,"NonCog_no23.csv.gz_pred_auto.txt", sep = 
 
 ```
 
-### Create dataframes including phenotypic (mental health, demographics etc) and genotypic (PGS) information per trait (EA, CP, NCP).
+### Create dataframes 
+
+Note: Including phenotypic (mental health, demographics etc) and genotypic (PGS) information per trait (EA, CP, NCP).
 
 ```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
 
@@ -395,7 +397,7 @@ table(myData$DCCT[myData$SEX==1])/sum(table(myData$DCCT[myData$SEX==1]))*100
 table(myData$FCCT[myData$SEX==1])/sum(table(myData$FCCT[myData$SEX==1]))*100
 ```
 
-## Obtain means and standard deviations by sex
+### Additional step: Obtain means and standard deviations by sex
 
 ```{r echo=T, results='hide', error=F, warning=F, message=F, eval=F}
 # Load libraries
