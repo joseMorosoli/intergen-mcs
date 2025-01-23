@@ -13,8 +13,8 @@ Link to preprint: https://osf.io/preprints/psyarxiv/hc3b5
 
 The original pipeline to compute polygenic scores with LDpred2 can be found at https://github.com/AndreAllegrini/LDpred2
 
-Data:
+## Data
 The data used in this study are from the Millennium Cohort Study (MCS). The MCS data are not publicly available but can be accessed by researchers through the UK Data Service. Researchers seeking access can contact the Centre for Longitudinal Studies at University College London (https://cls.ucl.ac.uk/), where detailed instructions for applying to use the data are provided. Access to the data requires registration and adherence to the terms of use set by the data providers, including agreements on confidentiality and ethical use.
 
-Software and code:
+## Software and code
 Data analysis was performed using custom R (lavaan, lme4 packages in R v4.4.1) and Unix (PLINK 1.9, KING 2.2.7). We have shared code for main analyses as supplementary material for peer review purposes but we are currently developing a GitHub repository where code and commentary will be made publicly available.
