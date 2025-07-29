@@ -197,4 +197,4 @@ for(trait in c("EA","NCP","CP")){
 #-----------------------------
 # Save Final Dataset
 #-----------------------------
-save(myData, file="MCS_PGS_cleaned.RData")
+save(myData, file="NATCOMMS_R1.RData")
