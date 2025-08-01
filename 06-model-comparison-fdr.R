@@ -23,12 +23,12 @@ comparison <- rbind(
 )
 
 ### --- Apply FDR correction ---
-comparison3$p_fdr <- p.adjust(comparison3$pvalue_num, method = "fdr")
+comparison$p_fdr <- p.adjust(comparison3$pvalue_num, method = "fdr")
 
 ### --- Display results ---
-comparison3
-round(comparison3$p_fdr, 3)
-round(comparison3$pvalue_num, 3)
+comparison
+round(comparison$p_fdr, 3)
+round(comparison$pvalue_num, 3)
 
 ### --- Post-hoc comparison between cognitive and non-cognitive models ---
 cognoncog_comp <- rbind(Chisq_7a, Chisq_7b)
