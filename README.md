@@ -1,4 +1,4 @@
-# Intergenerational Genetic Transmission & Nurture Analyses
+# Genetic Transmission & Nurture Trio Analyses
 
 This is a repository for analyses described in "Intergenerational influences of the cognitive and non-cognitive genetic components of parental education on externalising and internalising behaviour in childhood and adolescence" by Morosoli et al. (2024).
 
