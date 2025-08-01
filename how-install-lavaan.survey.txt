@@ -1,0 +1,35 @@
+============================================================
+Installing the 'lavaan.survey' package
+============================================================
+
+The `lavaan.survey` package is required for survey-weighted
+structural equation modeling in this project. This package is no
+longer available on CRAN but can be installed manually from its
+archived source.
+
+Follow these steps:
+
+1. Set the URL for the archived package source:
+
+   url <- "https://cran.r-project.org/src/contrib/Archive/lavaan.survey/lavaan.survey_1.1.3.1.tar.gz"
+
+2. Download the package source to a temporary location:
+
+   destfile <- tempfile(fileext = ".tar.gz")
+   download.file(url, destfile, mode = "wb")
+
+3. Install the package from the downloaded archive:
+
+   install.packages(destfile, repos = NULL, type = "source")
+
+4. Load the package in your R session:
+
+   library(lavaan.survey)
+
+============================================================
+Notes:
+- Requires RTools (on Windows) or Xcode command-line tools (on macOS)
+  for building from source.
+- The version specified above (1.1.3.1) was the last archived release 
+  on CRAN as of this writing.
+============================================================
