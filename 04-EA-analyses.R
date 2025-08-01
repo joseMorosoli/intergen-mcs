@@ -1,7 +1,7 @@
 #########################################
 # Trio SEM Models: Educational Attainment
 # Author: Jose J. Morosoli
-# Date: 2025-08-01
+# Date: 31-07-2025
 # Purpose: Fit full set of Trio SEM models 
 # (null, base, and constrained) with 
 # complex survey adjustment, and run model 
