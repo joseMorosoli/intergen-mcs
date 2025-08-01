@@ -18,6 +18,10 @@ Link to preprint: https://osf.io/preprints/psyarxiv/hc3b5_v1
 - 10-plots-with-cis.R - plotting results.
 - how-install-lavaansurvey.txt - instructions to install archived R package.
 
+Some of the scripts have been automatically formatted and summarise to display the original logic while preserving readability.
+
+Feel free to contact the authors if you have any comments: j.morosoli@ucl.ac.uk
+
 The original pipeline to compute polygenic scores with LDpred2 can be found at https://github.com/AndreAllegrini/LDpred2
 
 ## Data
