@@ -1,4 +1,26 @@
-# Load required packages
+#############################################################
+# Project: Intergenerational PGS Trio Models
+# Script:   Power Calculations for SEM Models
+# Purpose:  Perform Monte Carlo simulations to estimate 
+#           statistical power for detecting direct and 
+#           indirect genetic effects in trio-based 
+#           structural equation models.
+#
+# Approach: - Generate synthetic data under specified effect 
+#             sizes using lavaan.
+#           - Fit SEM to simulated data.
+#           - Estimate power as the proportion of significant 
+#             results across iterations.
+#
+# Outputs:  - power_summary: a table summarizing power for 
+#             detecting each effect under different parameter 
+#             configurations.
+#
+# Author:   Jose J. Morosoli
+# Date:     31-07-2025
+#############################################################
+
+### --- Load Required Packages ---
 library(tidyverse)
 library(lavaan)
 library(foreach)
@@ -6,7 +28,7 @@ library(parallel)
 library(doParallel)
 library(glue)
 
-# Define model generator
+### --- Define Population Model Generator ---
 population.model <- function(ec, em, ef) {
   glue('
     Xc ~ 0.5*Xm + 0.5*Xf
@@ -20,26 +42,31 @@ population.model <- function(ec, em, ef) {
   ')
 }
 
-# Model to fit
+### --- Define Sample Model to Fit ---
 samp.model <- "
   Yc ~ d*Xc + Xm + Xf
   gt := 0.5*d
 "
 
-# Define effect sizes
+### --- Define Effect Sizes ---
 direct_effects <- c(0.08, 0.12, 0.16)
 indirect_effects <- c(0.02, 0.04, 0.08)
 param_grid <- expand.grid(ec = direct_effects, em = indirect_effects, ef = indirect_effects)
 
-# Simulation settings
+### --- Simulation Settings ---
 N <- 3223
 iterations <- 1000
 numCores <- detectCores()
 cl <- makeCluster(numCores - 1)
 registerDoParallel(cl)
-clusterEvalQ(cl, { library(lavaan); library(tidyverse); library(glue); library(tidyverse); library(foreach)})
+clusterEvalQ(cl, { 
+  library(lavaan); 
+  library(tidyverse); 
+  library(glue); 
+  library(foreach)
+})
 
-# Run simulation
+### --- Run Simulations ---
 results <- foreach(i = 1:nrow(param_grid), .combine = rbind) %dopar% {
   ec <- param_grid$ec[i]
   em <- param_grid$em[i]
@@ -60,11 +87,11 @@ results <- foreach(i = 1:nrow(param_grid), .combine = rbind) %dopar% {
 
 stopCluster(cl)
 
-# Summarize power
+### --- Summarize Power ---
 power_summary <- results %>%
   filter(op == "~") %>%
   group_by(lhs, rhs, ec, em, ef) %>%
   summarise(power = mean(pvalue < 0.05), .groups = "drop")
 
-# Print power table
+### --- Print Power Table ---
 print(power_summary)
