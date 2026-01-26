@@ -23,7 +23,7 @@ comparison <- rbind(
 )
 
 ### --- Apply FDR correction ---
-comparison$p_fdr <- p.adjust(comparison3$pvalue_num, method = "fdr")
+comparison$p_fdr <- p.adjust(comparison$pvalue_num, method = "fdr")
 
 ### --- Display results ---
 comparison
@@ -35,5 +35,5 @@ cognoncog_comp <- rbind(Chisq_7a, Chisq_7b)
 cognoncog_comp
 
 ### --- Export results to Excel ---
-library(readxl)
-write.xlsx(comparison, file = "comparison-results.xlsx")
+library(writexl)
+write_xlsx(comparison, path = "comparison-results.xlsx")
