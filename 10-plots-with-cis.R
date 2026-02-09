@@ -23,7 +23,7 @@
 #     **parent-invariant** model for each outcome.
 #
 # Author:   Jose J. Morosoli
-# Date:     31-07-2025
+# Date:     09-02-2026
 #############################################################
 
 ### --- Load Required Packages ---
@@ -33,7 +33,7 @@ library(ggplot2)
 #------------------------------------------------------------
 # 1. Cognitive & Non-cognitive standardized betas with CI
 #------------------------------------------------------------
-std_parentinv <- standardizedSolution(fit_parentinv_svy_EXTc, se = TRUE, ci = TRUE) %>%
+std_parentinv <- standardizedSolution(fit_COGNON_time_svy, se = TRUE, ci = TRUE) %>%
   filter(op == "~") %>%
   mutate(
     Component = case_when(
@@ -72,7 +72,7 @@ std_parentinv_collapsed <- std_parentinv %>%
 #------------------------------------------------------------
 # 2. Educational Attainment (EA) standardized betas with CI
 #------------------------------------------------------------
-std_EA <- standardizedSolution(ea2_fit_svy, se = TRUE, ci = TRUE) %>%
+std_EA <- standardizedSolution(fit_ea_time_svy, se = TRUE, ci = TRUE) %>%
   filter(op == "~") %>%
   mutate(
     Component = "EA",
@@ -116,7 +116,7 @@ r2_per_predictor <- std_all_combined %>%
   mutate(R2 = est.std^2)
 
 #------------------------------------------------------------
-# 5. Plotting Function with CI
+# 5. Plotting Function (Coefficient / dot-and-whisker) with CI
 #------------------------------------------------------------
 plot_pgseffects_direct_indirect <- function(data, domain_name, r2_table) {
   
@@ -125,60 +125,76 @@ plot_pgseffects_direct_indirect <- function(data, domain_name, r2_table) {
     group_by(Component, Pathway) %>%
     summarise(MeanR2 = mean(R2), .groups = "drop")
   
-  subtitle_text <- paste0(
-    "Mean R²:",
-    paste(
-      vapply(
-        split(r2_sub, factor(r2_sub$Component, levels = c("EA", "Cognitive", "Non-cognitive"))),
-        function(df) {
-          paste0(
-            unique(df$Component), ": ",
-            paste0(
-              df$Pathway, " = ", sprintf("%.3f", df$MeanR2),
-              collapse = " | "
-            )
-          )
-        },
-        character(1)
-      ),
-      collapse = "\n"
+  #subtitle_text <- paste0(
+  #  "Mean R²:",
+  #  paste(
+  #    vapply(
+  #      split(r2_sub, factor(r2_sub$Component, levels = c("EA", "Cognitive", "Non-cognitive"))),
+  #      function(df) {
+  #        if (nrow(df) == 0) return(NA_character_)
+  #        paste0(
+  #          unique(df$Component), ": ",
+  #          paste0(
+  #            df$Pathway, " = ", sprintf("%.3f", df$MeanR2),
+  #            collapse = " | "
+  #          )
+  #        )
+  #      },
+  #      character(1)
+  #    ),
+  #    collapse = "\n"
+  #  )
+  #)
+  
+  plot_data <- data %>%
+    filter(Domain == domain_name) %>%
+    mutate(
+      Component = factor(Component, levels = c("EA", "Cognitive", "Non-cognitive")),
+      Pathway   = factor(Pathway, levels = c("Transmission", "Nurture")),
+      Time      = factor(Time, levels = c("Age 3", "Age 5", "Age 7", "Age 14"))
     )
-  )
+  
+  dodge <- position_dodge(width = 0.55)
   
   ggplot(
-    filter(data, Domain == domain_name),
-    aes(x = Time, y = est.std,
-        fill = Component,
-        group = interaction(Component, Pathway))
+    plot_data,
+    aes(x = Time, y = est.std, color = Component)
   ) +
-    geom_bar(
-      stat = "identity",
-      position = position_dodge(0.8),
-      width = 0.7,
-      color = "black"
-    ) +
+    geom_hline(yintercept = 0, linewidth = 0.5) +
     geom_errorbar(
       aes(ymin = ci_lower, ymax = ci_upper),
-      position = position_dodge(0.8),
-      width = 0.2,
-      linewidth = 0.6
+      position = dodge,
+      width = 0.5,
+      linewidth = 0.9
+    ) +
+    geom_point(
+      position = dodge,
+      size = 4
     ) +
     facet_wrap(~ Pathway) +
     labs(
-      title = paste(domain_name, ": Genetic transmission and Genetic nurture effects"),
-      subtitle = subtitle_text,
+      title = paste(domain_name),#, ": Genetic transmission and Genetic nurture effects"),
+      #subtitle = subtitle_text,
       x = "Time Point",
-      y = "Standardized Beta",
-      fill = "Predictor"
+      y = "Standardized coefficient (β)",
+      color = "Predictor"
     ) +
-    scale_fill_brewer(palette = "Set2") +
+    scale_color_manual(
+      values = c(
+        "EA"            = "#0072B2",  # blue
+        "Cognitive"     = "#009E73",  # bluish green
+        "Non-cognitive" = "#D55E00"   # vermillion
+      )
+    ) +
     theme_minimal(base_size = 14) +
     theme(
+      plot.title = element_text(hjust = 0.5),
       axis.text.x = element_text(angle = 45, hjust = 1),
       strip.text = element_text(size = 13, face = "bold"),
       legend.position = "top"
     )
 }
+
 
 #------------------------------------------------------------
 # 6. Set Factor Levels for Consistent Bar Order
