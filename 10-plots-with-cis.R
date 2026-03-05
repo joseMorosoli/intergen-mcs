@@ -43,7 +43,7 @@ std_parentinv <- standardizedSolution(fit_COGNON_time_svy, se = TRUE, ci = TRUE)
     ),
     Pathway = case_when(
       grepl("_C_", rhs) ~ "Transmission",
-      grepl("_M_", rhs) | grepl("_F_", rhs) ~ "Nurture",
+      grepl("_M_", rhs) | grepl("_F_", rhs) ~ "Indirect",
       TRUE ~ "Other"
     ),
     Domain = case_when(
@@ -78,7 +78,7 @@ std_EA <- standardizedSolution(fit_ea_time_svy, se = TRUE, ci = TRUE) %>%
     Component = "EA",
     Pathway = case_when(
       grepl("_C_", rhs) ~ "Transmission",
-      grepl("_M_", rhs) | grepl("_F_", rhs) ~ "Nurture",
+      grepl("_M_", rhs) | grepl("_F_", rhs) ~ "Indirect",
       TRUE ~ "Other"
     ),
     Domain = case_when(
@@ -150,7 +150,7 @@ plot_pgseffects_direct_indirect <- function(data, domain_name, r2_table) {
     filter(Domain == domain_name) %>%
     mutate(
       Component = factor(Component, levels = c("EA", "Cognitive", "Non-cognitive")),
-      Pathway   = factor(Pathway, levels = c("Transmission", "Nurture")),
+      Pathway   = factor(Pathway, levels = c("Transmission", "Indirect")),
       Time      = factor(Time, levels = c("Age 3", "Age 5", "Age 7", "Age 14"))
     )
   
@@ -173,7 +173,7 @@ plot_pgseffects_direct_indirect <- function(data, domain_name, r2_table) {
     ) +
     facet_wrap(~ Pathway) +
     labs(
-      title = paste(domain_name),#, ": Genetic transmission and Genetic nurture effects"),
+      title = paste(domain_name),#, ": Genetic transmission and indirect genetic effects"),
       #subtitle = subtitle_text,
       x = "Time Point",
       y = "Standardized coefficient (β)",
