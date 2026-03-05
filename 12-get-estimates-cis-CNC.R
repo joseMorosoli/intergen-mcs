@@ -229,18 +229,28 @@ fit_COGNON_best_svy <- lavaan.survey(fit_COGNON_best, survey.design=svy_design, 
 #### STEP 2 ####
 # Get standardized estimates with confidence intervals
 estimates_cistd_base <- standardizedSolution(fit_base_svy )
-estimates_cistd_time <- standardizedSolution(fit_COGNON_time_svy ) 
-estimates_cistd_best <- standardizedSolution(fit_COGNON_best_svy ) 
+estimates_cistd_time <- standardizedSolution(fit_COGNON_time_svy )
+estimates_cistd_best <- standardizedSolution(fit_COGNON_best_svy )
+# Get unstandardized estimates with confidence intervals
+estimates_unstd_base <- parameterEstimates(fit_base_svy, standardized = TRUE, ci = TRUE)
+estimates_unstd_time <- parameterEstimates(fit_COGNON_time_svy, standardized = TRUE, ci = TRUE)
+estimates_unstd_best <- parameterEstimates(fit_COGNON_best_svy, standardized = TRUE, ci = TRUE)
 # Select and rename key columns
-table_data_base <- estimates_cistd_base[, c("lhs","op","rhs", "est.std", "ci.lower", "ci.upper","se","pvalue")]
-table_data_time <- estimates_cistd_time[, c("lhs","op","rhs", "est.std", "ci.lower", "ci.upper","se","pvalue")]
-table_data_best <- estimates_cistd_best[, c("lhs","op","rhs", "est.std", "ci.lower", "ci.upper","se","pvalue")]
+table_data_base <- cbind(estimates_cistd_base[, c("lhs","op","rhs")],
+                         estimates_unstd_base[, c("est","se")],
+                         estimates_cistd_base[, c("est.std", "ci.lower", "ci.upper","se","pvalue")])
+table_data_time <- cbind(estimates_cistd_time[, c("lhs","op","rhs")],
+                         estimates_unstd_time[, c("est","se")],
+                         estimates_cistd_time[, c("est.std", "ci.lower", "ci.upper","se","pvalue")])
+table_data_best <- cbind(estimates_cistd_best[, c("lhs","op","rhs")],
+                                              estimates_unstd_best[, c("est","se")],
+                                              estimates_cistd_best[, c("est.std", "ci.lower", "ci.upper","se","pvalue")])
 table_data_base$p_fdr <- p.adjust(table_data_base$pvalue, method="fdr")
 table_data_time$p_fdr <- p.adjust(table_data_time$pvalue, method="fdr")
 table_data_best$p_fdr <- p.adjust(table_data_best$pvalue, method="fdr")
-names(table_data_base) <- c("outcome", "operator","predictor", "beta.std", "ci.lower","ci.upper","se","pvalue","qvalue")
-names(table_data_time) <- c("outcome", "operator","predictor", "beta.std", "ci.lower","ci.upper","se","pvalue","qvalue")
-names(table_data_best) <- c("outcome", "operator","predictor", "beta.std", "ci.lower","ci.upper","se","pvalue","qvalue")
+names(table_data_base) <- c("outcome", "operator","predictor", 'beta.obs','se.obs',"beta.std", "ci.lower","ci.upper","se","pvalue","qvalue")
+names(table_data_time) <- c("outcome", "operator","predictor", 'beta.obs','se.obs',"beta.std", "ci.lower","ci.upper","se","pvalue","qvalue")
+names(table_data_best) <- c("outcome", "operator","predictor", 'beta.obs','se.obs',"beta.std", "ci.lower","ci.upper","se","pvalue","qvalue")
 
 #### STEP 3 ####
 # Get multiple-testing-adjusted CIs (Bonferroni)
