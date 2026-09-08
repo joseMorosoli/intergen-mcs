@@ -183,6 +183,6 @@ table_data_best$m_tests = m_tests
 
 #### STEP 4 ####
 # Export to Excel
-write_xlsx(table_data_base, path = "fit_ea_base_svy_R2.xlsx") # base
-write_xlsx(table_data_time, path = "fit_ea_time_svy_R2.xlsx") # time-specific only
-write_xlsx(table_data_best, path = "fit_ea_best_svy_R2.xlsx") # best-fitting model
+#write_xlsx(table_data_base, path = "fit_ea_base_svy_R2.xlsx") # base
+#write_xlsx(table_data_time, path = "fit_ea_time_svy_R2.xlsx") # time-specific only
+#write_xlsx(table_data_best, path = "fit_ea_best_svy_R2.xlsx") # best-fitting model

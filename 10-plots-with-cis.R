@@ -207,9 +207,15 @@ std_all_combined$Component <- factor(
 #------------------------------------------------------------
 # 7. Plot Externalising
 #------------------------------------------------------------
-plot_pgseffects_direct_indirect(std_all_combined, "Externalising", r2_per_predictor)
+export_ext <- plot_pgseffects_direct_indirect(std_all_combined, "Externalising", r2_per_predictor)
+ggsave("Figure_1.pdf", plot = export_ext, width = 183, height = 130, units = "mm", device = cairo_pdf)
+ggsave("Figure_1.tiff", plot = export_ext, width = 183, height = 130, units = "mm", dpi = 600, compression = "lzw")
 
 #------------------------------------------------------------
 # 8. Plot Internalising
 #------------------------------------------------------------
-plot_pgseffects_direct_indirect(std_all_combined, "Internalising", r2_per_predictor)
+export_int <- plot_pgseffects_direct_indirect(std_all_combined, "Internalising", r2_per_predictor)
+ggsave("Figure_2.pdf", plot = export_int, width = 183, height = 130, units = "mm", device = cairo_pdf)
+ggsave("Figure_2.tiff", plot = export_int, width = 183, height = 130, units = "mm", dpi = 600, compression = "lzw")
+
+

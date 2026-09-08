@@ -280,6 +280,6 @@ table_data_best$m_tests = m_tests
 
 #### STEP 4 ####
 # Export to Excel
-write_xlsx(table_data_base, path = "fit_cnc_base_svy_R2.xlsx") # base
-write_xlsx(table_data_time, path = "fit_cnc_time_svy_R2.xlsx") # time-specific only
-write_xlsx(table_data_best, path = "fit_cnc_best_svy_R2.xlsx") # best-fitting model
+#write_xlsx(table_data_base, path = "fit_cnc_base_svy_R2.xlsx") # base
+#write_xlsx(table_data_time, path = "fit_cnc_time_svy_R2.xlsx") # time-specific only
+#write_xlsx(table_data_best, path = "fit_cnc_best_svy_R2.xlsx") # best-fitting model
