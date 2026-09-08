@@ -35,9 +35,9 @@ pgs1 <- paste0("EA_",trait, "_", ind, "_res")
 pgs2 <- paste0("EA_",trait, "_", ind2, "_res")
 pgs3 <- paste0("EA_",trait, "_", ind3, "_res")
 
-# ESTIMATE TIME-SPECIFIC MODEL #
-# Same coefficients for parents for EXT and INT
-# Same coefficients for time for INT
+# ESTIMATE PARENT-INVARIANT, TIME-SPECIFIC MODEL
+# Same parental coefficients within each age for EXT and INT
+# Coefficients remain free to vary across ages
 myformula_ea_time_1 <- paste(outcome1, "~","be11*",pgs1,"+","be12*",pgs2,"+","be12*",pgs3, sep="")
 myformula_ea_time_2 <- paste(outcome2, "~","be21*",pgs1,"+","be22*",pgs2,"+","be22*",pgs3, sep="")
 myformula_ea_time_3 <- paste(outcome3, "~","be31*",pgs1,"+","be32*",pgs2,"+","be32*",pgs3, sep="")

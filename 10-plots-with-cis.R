@@ -16,11 +16,10 @@
 #   - Bar plots of standardized betas with 95% CIs for each domain
 #   - Annotated subtitles showing mean R² per predictor/pathway
 #
-# NOTE: 
-#   - This script must be re-run for each outcome/domain (EXT vs INT) 
-#     based on the specific model you want to plot.
-#   - For the manuscript, plots were generated using the 
-#     **parent-invariant** model for each outcome.
+# NOTE:
+#   - Manuscript plots use parent-invariant, age-specific models.
+#   - EA estimates come from fit_ea_time_svy.
+#   - Cog and NonCog estimates come from fit_timeCNC_svy.
 #
 # Author:   Jose J. Morosoli
 # Date:     09-02-2026
@@ -33,7 +32,7 @@ library(ggplot2)
 #------------------------------------------------------------
 # 1. Cognitive & Non-cognitive standardized betas with CI
 #------------------------------------------------------------
-std_parentinv <- standardizedSolution(fit_COGNON_time_svy, se = TRUE, ci = TRUE) %>%
+std_parentinv <- standardizedSolution(fit_timeCNC_svy, se = TRUE, ci = TRUE) %>% 
   filter(op == "~") %>%
   mutate(
     Component = case_when(
@@ -197,7 +196,7 @@ plot_pgseffects_direct_indirect <- function(data, domain_name, r2_table) {
 
 
 #------------------------------------------------------------
-# 6. Set Factor Levels for Consistent Bar Order
+# 6. Set Factor Levels for Consistent Order
 #------------------------------------------------------------
 std_all_combined$Component <- factor(
   std_all_combined$Component,
