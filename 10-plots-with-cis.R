@@ -1,19 +1,19 @@
 #############################################################
 # Project: Intergenerational PGS Trio Models
 # Script:   Plotting PGS Effects (Direct & Indirect) Over Time
-# Purpose:  Visualize standardized beta coefficients and 
+# Purpose:  Visualize standardised beta coefficients and 
 #           confidence intervals for cognitive, non-cognitive, 
 #           and EA polygenic scores across multiple time points 
 #           and domains (externalising & internalising).
 #
 # Approach:
-#   - Extract standardized SEM estimates with confidence intervals
+#   - Extract standardised SEM estimates with confidence intervals
 #   - Combine PGS components (EA, cognitive, non-cognitive)
 #   - Compute variance explained (R²) per predictor
 #   - Generate bar plots with error bars, grouped by pathway
 #
 # Outputs:  
-#   - Bar plots of standardized betas with 95% CIs for each domain
+#   - Bar plots of standardised betas with 95% CIs for each domain
 #   - Annotated subtitles showing mean R² per predictor/pathway
 #
 # NOTE:
@@ -30,7 +30,7 @@ library(dplyr)
 library(ggplot2)
 
 #------------------------------------------------------------
-# 1. Cognitive & Non-cognitive standardized betas with CI
+# 1. Cognitive & Non-cognitive standardised betas with CI
 #------------------------------------------------------------
 std_parentinv <- standardizedSolution(fit_timeCNC_svy, se = TRUE, ci = TRUE) %>% 
   filter(op == "~") %>%
@@ -69,7 +69,7 @@ std_parentinv_collapsed <- std_parentinv %>%
   )
 
 #------------------------------------------------------------
-# 2. Educational Attainment (EA) standardized betas with CI
+# 2. Educational Attainment (EA) standardised betas with CI
 #------------------------------------------------------------
 std_EA <- standardizedSolution(fit_ea_time_svy, se = TRUE, ci = TRUE) %>%
   filter(op == "~") %>%
@@ -175,7 +175,7 @@ plot_pgseffects_direct_indirect <- function(data, domain_name, r2_table) {
       title = paste(domain_name),#, ": Genetic transmission and indirect genetic effects"),
       #subtitle = subtitle_text,
       x = "Time Point",
-      y = "Standardized coefficient (β)",
+      y = "Standardised coefficient (β)",
       color = "Predictor"
     ) +
     scale_color_manual(
