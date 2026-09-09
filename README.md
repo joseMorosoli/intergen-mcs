@@ -5,7 +5,7 @@ This repository contains the analysis code for the manuscript:
 **"Education-related polygenic scores show different associations with youth mental health in parent-offspring trios"**  
 Morosoli et al.
 
-Preprint: https://osf.io/preprints/psyarxiv/hc3b5_v1
+Preprint: https://osf.io/preprints/psyarxiv/hc3b5_v2
 
 ## Overview
 
