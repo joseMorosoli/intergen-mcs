@@ -46,6 +46,7 @@ myformula_ea_time_5 <- paste(outcome5, "~","bi11*",pgs1,"+","bi12*",pgs2,"+","bi
 myformula_ea_time_6 <- paste(outcome6, "~","bi21*",pgs1,"+","bi22*",pgs2,"+","bi22*",pgs3, sep="")
 myformula_ea_time_7 <- paste(outcome7, "~","bi31*",pgs1,"+","bi32*",pgs2,"+","bi32*",pgs3, sep="")
 myformula_ea_time_8 <- paste(outcome8, "~","bi41*",pgs1,"+","bi42*",pgs2,"+","bi42*",pgs3, sep="")
+
 #specify the free model using these formulas
 model_ea_time_ <- paste(# regressions 
   myformula_ea_time_1,
