@@ -12,7 +12,7 @@ library(dplyr)
 library(psych)
 
 # --- Define file paths ---
-file_path <- "C:/UCL_DATA/00_LOCAL_MCS/"
+file_path <- ".../"
 
 # --- Load SPSS data (phenotypic information) ---
 CMstructure       <- read.spss(paste0(file_path, "GENDAC_PINGAULT_mcs_cm_structure_2021_05_12.sav"), to.data.frame = TRUE)
