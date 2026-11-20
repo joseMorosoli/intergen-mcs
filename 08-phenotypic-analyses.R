@@ -49,7 +49,7 @@ extract_chisq <- function(myanova, modelname) {
 options(stringsAsFactors = FALSE)
 
 ### --- Load Data ---
-load(file = "NATCOMMS_R1.RData")
+load(file = "NATCOMMS_Morosoli_2026.RData")
 
 ### --- Survey Design ---
 aframe_svy_na <- aframe_svy[!is.na(aframe_svy$FOVWT2), ]

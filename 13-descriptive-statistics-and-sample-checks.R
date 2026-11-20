@@ -43,9 +43,10 @@ dir.create(results_dir, showWarnings = FALSE)
 # 1. LOAD DATA
 # ----------------------------------------------------------
 
-file_path <- "C:/UCL_DATA/00_LOCAL_MCS/"
+file_path <- ".../"
 
-load("../NATCOMMS_R1.RData")
+load("NATCOMMS_Morosoli_2026.RData")
+
 aframe_svy_na <- aframe_svy[!is.na(aframe_svy$FOVWT2), ]
 
 parentstructure <- read.spss(

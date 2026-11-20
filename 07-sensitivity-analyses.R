@@ -23,7 +23,7 @@
 #############################################################
 
 ### --- Load Data ---
-load(file = "NATCOMMS_R1.RData")
+load(file = "NATCOMMS_Morosoli_2026.RData")
 
 ### --- Identify Ancestry Outliers ---
 # Extract only the PC columns (adjust if your PCs are named differently)
